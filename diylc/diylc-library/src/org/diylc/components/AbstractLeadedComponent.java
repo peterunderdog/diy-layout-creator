@@ -73,7 +73,7 @@ public abstract class AbstractLeadedComponent<T> extends AbstractTransparentComp
   protected Size length;
   protected Size width;
   protected Point[] points = new Point[] {new Point((int) (-DEFAULT_SIZE.convertToPixels() / 2), 0),
-      new Point((int) (DEFAULT_SIZE.convertToPixels() / 2), 0), new Point(0, 0)};
+      new Point((int) (DEFAULT_SIZE.convertToPixels() / 2), 0), new Point(0, 0), new Point(0, 0), new Point(0, 0)};
   protected Color bodyColor = Color.white;
   protected Color borderColor = Color.black;
   protected Color labelColor = LABEL_COLOR;
@@ -83,9 +83,11 @@ public abstract class AbstractLeadedComponent<T> extends AbstractTransparentComp
   private LabelOriantation labelOriantation = LabelOriantation.Directional;
   protected boolean moveLabel = false;
   
+  protected Boolean flexibleLeads = false;
+  
   // parameters for adjusting the label control point
-  protected Double gamma = null;
-  protected Double r = null;
+  protected transient Double[] gamma = null;
+  protected transient Double[] r = null;
 
   protected AbstractLeadedComponent() {
     super();
@@ -97,7 +99,9 @@ public abstract class AbstractLeadedComponent<T> extends AbstractTransparentComp
     } catch (NullPointerException e) {
       // This will happen if components do not have any shape.
     }    
-    points[2] = calculateLabelPosition(points[0], points[1]);
+    getPoints()[2] = calculateLabelPosition(points[0], points[1]);
+    getPoints()[3] = calculateCurvePointPosition(0.2);
+    getPoints()[4] = calculateCurvePointPosition(0.8);
   }
 
   protected boolean IsCopperArea() {
@@ -107,10 +111,12 @@ public abstract class AbstractLeadedComponent<T> extends AbstractTransparentComp
   protected Point[] getPoints() {
     // convert old points to new
     if (points.length == 2) {      
-      points = new Point[] { points[0], points[1], calculateLabelPosition(points[0], points[1]) };
+      points = new Point[] { points[0], points[1], calculateLabelPosition(points[0], points[1]), calculateCurvePointPosition(0.2), calculateCurvePointPosition(0.8) };
       // to make standing components backward compatible and not show a label until the user switches the display to something else
       if (isStanding())
         display = Display.NONE;
+    } else if (points.length == 3) {      
+      points = new Point[] { points[0], points[1], points[2], calculateCurvePointPosition(0.2), calculateCurvePointPosition(0.8) };
     }
     return points;
   }
@@ -119,6 +125,12 @@ public abstract class AbstractLeadedComponent<T> extends AbstractTransparentComp
     double x = (point1.x + point2.x) / 2.0;
     double y = (point1.y + point2.y) / 2.0;
     return new Point((int) x, (int) y);
+  }
+  
+  protected Point calculateCurvePointPosition(double r) {
+    double theta = Math.atan2(points[1].y - points[0].y, getPoints()[1].x - getPoints()[0].x);
+    double d = points[0].distance(points[1]);
+    return new Point((int)(points[0].x + d * r * Math.cos(theta)), (int)(points[0].y + d * r * Math.sin(theta)));
   }
 
   @Override
@@ -129,10 +141,12 @@ public abstract class AbstractLeadedComponent<T> extends AbstractTransparentComp
       double x = (getPoints()[1].x + getPoints()[0].x) / 2.0;
       double y = (getPoints()[1].y + getPoints()[0].y) / 2.0;
       double theta = Math.atan2(getPoints()[1].y - getPoints()[0].y, getPoints()[1].x - getPoints()[0].x);
-      double beta = gamma - (Math.PI / 2 - theta);
-      getPoints()[2].setLocation(x + Math.cos(beta) * r, y + Math.sin(beta) * r);
+      for (int i = 2; i < 5; i++) {
+        double beta = gamma[i] - (Math.PI / 2 - theta);
+        getPoints()[i].setLocation(x + Math.cos(beta) * r[i], y + Math.sin(beta) * r[i]);        
+        r[i] = null;
+      }
       gamma = null;
-      r = null;
     }
     
     double distance = getPoints()[0].distance(getPoints()[1]);
@@ -538,12 +552,21 @@ public abstract class AbstractLeadedComponent<T> extends AbstractTransparentComp
 
   @Override
   public int getControlPointCount() {
-    return getPoints().length - (getMoveLabel() ? 0 : 1);
+    int count = 2;
+    if (getMoveLabel())
+      count++;
+    if (getFlexibleLeads())
+      count += 2;
+    return count;
   }
 
   @Override
   public Point getControlPoint(int index) {
-    return (Point) getPoints()[index];
+    if (index < 2 || getMoveLabel())
+     return getPoints()[index];
+    if (!getMoveLabel()) 
+      return getPoints()[index - 1];
+    return getPoints()[index];
   }
 
   @Override
@@ -553,7 +576,15 @@ public abstract class AbstractLeadedComponent<T> extends AbstractTransparentComp
 
   @Override
   public VisibilityPolicy getControlPointVisibilityPolicy(int index) {
-    return getMoveLabel() || index < 2 ? VisibilityPolicy.ALWAYS : VisibilityPolicy.NEVER;
+    if (index < 2)
+      return VisibilityPolicy.ALWAYS;
+    if (getMoveLabel()) {
+      if (getFlexibleLeads())
+        return VisibilityPolicy.WHEN_SELECTED;
+      else 
+        return index == 2 ? VisibilityPolicy.WHEN_SELECTED : VisibilityPolicy.NEVER; 
+    } else 
+      return index < 4 ? VisibilityPolicy.WHEN_SELECTED : VisibilityPolicy.NEVER;    
   }
   
   @Override
@@ -566,16 +597,19 @@ public abstract class AbstractLeadedComponent<T> extends AbstractTransparentComp
     // when moving one of the ending points, try to retain the angle and distance from the center point to label point
     if (index < 2) {
       if (gamma == null) {
+        gamma = new Double[5];
+        r = new Double[5];
         double x = (getPoints()[1].x + getPoints()[0].x) / 2.0;
         double y = (getPoints()[1].y + getPoints()[0].y) / 2.0;
         double theta = Math.atan2(getPoints()[1].y - getPoints()[0].y, getPoints()[1].x - getPoints()[0].x);
-        double beta = Math.atan2(getPoints()[2].y - y, getPoints()[2].x - x);
-        gamma = beta + (Math.PI / 2 - theta);
-        r = getPoints()[2].distance(x, y);
+        for (int i = 2; i < 5; i++) {                     
+            double beta = Math.atan2(getPoints()[i].y - y, getPoints()[i].x - x);
+            gamma[i] = beta + (Math.PI / 2 - theta);
+            r[i] = getPoints()[i].distance(x, y);        
+        }
       } else { // in case when we are copy pasting we don't want to recalculate 3rd point position as they will all move in unison
         // when we moved the first point, gamma and r were initialized, so now we are canceling
-        gamma = null;
-        r = null;
+//        gamma = null;
       }
     }
     
@@ -681,7 +715,17 @@ public abstract class AbstractLeadedComponent<T> extends AbstractTransparentComp
     this.moveLabel = moveLabel;
     // recalculate label point position
     if (moveLabel)
-      points[2] = calculateLabelPosition(points[0], points[1]);
+      getPoints()[2] = calculateLabelPosition(points[0], points[1]);
+  }
+    
+  public Boolean getFlexibleLeads() {
+    if (flexibleLeads == null)
+      flexibleLeads = false;
+    return flexibleLeads;
+  }
+  
+  public void setFlexibleLeads(Boolean flexibleLeads) {
+    this.flexibleLeads = flexibleLeads;
   }
   
   @Override

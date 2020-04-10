@@ -29,7 +29,7 @@ import java.awt.geom.Rectangle2D;
 import org.diylc.appframework.miscutils.ConfigurationManager;
 import org.diylc.common.IPlugInPort;
 import org.diylc.common.SimpleComponentTransformer;
-import org.diylc.components.AbstractLeadedComponent;
+import org.diylc.components.AbstractAxialComponent;
 import org.diylc.core.CreationMethod;
 import org.diylc.core.IDIYComponent;
 import org.diylc.core.Theme;
@@ -43,7 +43,7 @@ import org.diylc.utils.Constants;
     creationMethod = CreationMethod.POINT_BY_POINT, instanceNamePrefix = "D",
     description = "Plastic diode, like most rectifier, zener, schottky, etc.", zOrder = IDIYComponent.COMPONENT,
     transformer = SimpleComponentTransformer.class, enableCache = true)
-public class DiodePlastic extends AbstractLeadedComponent<String> {
+public class DiodePlastic extends AbstractAxialComponent<String> {
 
   private static final long serialVersionUID = 1L;
 

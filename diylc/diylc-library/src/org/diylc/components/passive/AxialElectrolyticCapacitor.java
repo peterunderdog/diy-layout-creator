@@ -33,7 +33,7 @@ import org.diylc.appframework.miscutils.ConfigurationManager;
 import org.diylc.common.IPlugInPort;
 import org.diylc.common.ObjectCache;
 import org.diylc.common.SimpleComponentTransformer;
-import org.diylc.components.AbstractLeadedComponent;
+import org.diylc.components.AbstractAxialComponent;
 import org.diylc.core.CreationMethod;
 import org.diylc.core.IDIYComponent;
 import org.diylc.core.Theme;
@@ -49,7 +49,7 @@ import org.diylc.utils.Constants;
     creationMethod = CreationMethod.POINT_BY_POINT, instanceNamePrefix = "C",
     description = "Axial electrolytic capacitor, similar to Sprague Atom, F&T, etc", zOrder = IDIYComponent.COMPONENT,
     transformer = SimpleComponentTransformer.class, enableCache = true)
-public class AxialElectrolyticCapacitor extends AbstractLeadedComponent<Capacitance> {
+public class AxialElectrolyticCapacitor extends AbstractAxialComponent<Capacitance> {
 
   private static final long serialVersionUID = 1L;
 

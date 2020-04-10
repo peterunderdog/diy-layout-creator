@@ -27,7 +27,7 @@ import java.awt.Shape;
 import java.awt.geom.Rectangle2D;
 
 import org.diylc.common.SimpleComponentTransformer;
-import org.diylc.components.AbstractLeadedComponent;
+import org.diylc.components.AbstractAxialComponent;
 import org.diylc.core.CreationMethod;
 import org.diylc.core.IDIYComponent;
 import org.diylc.core.annotations.ComponentDescriptor;
@@ -41,7 +41,7 @@ import org.diylc.core.measures.SizeUnit;
     creationMethod = CreationMethod.POINT_BY_POINT, instanceNamePrefix = "C",
     description = "Axial film capacitor, similar to Mallory 150s", zOrder = IDIYComponent.COMPONENT,
     transformer = SimpleComponentTransformer.class)
-public class AxialFilmCapacitor extends AbstractLeadedComponent<Capacitance> {
+public class AxialFilmCapacitor extends AbstractAxialComponent<Capacitance> {
 
   private static final long serialVersionUID = 1L;
 
