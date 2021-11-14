@@ -304,6 +304,36 @@ public class DIL_IC extends AbstractLabeledComponent<String> {
     return body;
   }
 
+  private int getPinDisplayNo(int pinNo)
+  {
+      if (displayNumbers == DisplayNumbers.DIP) {
+        if (pinNo > pinCount.getValue() / 2) {
+          return pinCount.getValue() + pinCount.getValue() / 2 - pinNo + 1;
+        } else {
+          return pinNo;
+        }
+      } else if (displayNumbers == DisplayNumbers.CONNECTOR) {
+        if (pinNo > pinCount.getValue() / 2) {
+          return 2 * pinNo - pinCount.getValue();
+        } else {
+          return (2 * (pinNo - 1)) + 1;
+        }
+      } else if (displayNumbers == DisplayNumbers.DIP_MIRROR) {
+        if (pinNo > pinCount.getValue() / 2) {
+          return pinNo - (pinCount.getValue() / 2);
+        } else {
+          return pinCount.getValue() + 1 - pinNo;
+        }
+      } else if (displayNumbers == DisplayNumbers.CONNECTOR_MIRROR) {
+        if (pinNo > pinCount.getValue() / 2) {
+          return (2 * pinNo) - pinCount.getValue() - 1;
+        } else {
+          return 2 * pinNo;
+        }
+      }
+      return -1;
+  }  
+
   @Override
   public void draw(Graphics2D g2d, ComponentState componentState, boolean outlineMode, Project project,
       IDrawingObserver drawingObserver) {
@@ -453,36 +483,17 @@ public class DIL_IC extends AbstractLabeledComponent<String> {
       }
 
       g2d.setFont(project.getFont().deriveFont((float) (project.getFont().getSize2D() * 0.66)));
-      if (displayNumbers == DisplayNumbers.DIP) {
-        if (pinNo > pinCount.getValue() / 2) {
-          g2d.drawString(Integer.toString(pinCount.getValue() - j), textX1, textY1);
-          j++;
-        } else {
-          g2d.drawString(Integer.toString(pinNo), textX2, textY2);
-        }
-      } else if (displayNumbers == DisplayNumbers.CONNECTOR) {
-        if (pinNo > pinCount.getValue() / 2) {
-          k++;
-          g2d.drawString(Integer.toString(pinNo - (pinCount.getValue() / 2) + k), textX1, textY1);
-        } else {
-          g2d.drawString(Integer.toString(pinNo + j), textX2, textY2);
-          j++;
-        }
-      } else if (displayNumbers == DisplayNumbers.DIP_MIRROR) {
-        if (pinNo > pinCount.getValue() / 2) {
-          g2d.drawString(Integer.toString(pinCount.getValue() - pinCount.getValue() + j + 1), textX1, textY1);
-          j++;
-        } else {
-          g2d.drawString(Integer.toString(pinCount.getValue() - pinNo + 1), textX2, textY2);
-        }
-      } else if (displayNumbers == DisplayNumbers.CONNECTOR_MIRROR) {
-        if (pinNo > pinCount.getValue() / 2) {
-          k++;
-          g2d.drawString(Integer.toString(pinNo - (pinCount.getValue() / 2) + k - 1), textX1, textY1);
-        } else {
-          g2d.drawString(Integer.toString(pinNo + j + 1), textX2, textY2);
-          j++;
-        }
+
+
+      int displayNo = getPinDisplayNo(pinNo);
+      String theStr = Integer.toString(displayNo);
+      if (pinNo > pinCount.getValue() / 2)
+      {
+        g2d.drawString(theStr, textX2, textY2);
+      }
+      else
+      {
+        g2d.drawString(theStr, textX1, textY1);        
       }
     }
   }
@@ -557,6 +568,12 @@ public class DIL_IC extends AbstractLabeledComponent<String> {
 
   public void setDisplayNumbers(DisplayNumbers numbers) {
     this.displayNumbers = numbers;
+  }
+
+  @Override
+  public String getControlPointNodeName(int index) {
+    int num = getPinDisplayNo(index + 1);
+    return Integer.toString(num);
   }
   
   @Override
